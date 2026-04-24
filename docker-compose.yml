@@ -13,16 +13,16 @@ services:
         docker-entrypoint.sh mysqld
       "
     environment:
-      MYSQL_ROOT_PASSWORD: root123
-      MYSQL_DATABASE: clawmanager
-      MYSQL_USER: clawreef
-      MYSQL_PASSWORD: clawreef123
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
-      - /mnt/Storage1/clawmanager/mysql:/var/lib/mysql
+      - ${MYSQL_DATA_PATH}:/var/lib/mysql
     ports:
-      - "3306:3306"
+      - "${MYSQL_PORT:-3306}:3306"
     networks:
-      - clawmanager-net
+      - ${NETWORK_NAME:-clawmanager-net}
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -35,15 +35,15 @@ services:
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     volumes:
-      - /mnt/Storage1/clawmanager/minio:/data
+      - ${MINIO_DATA_PATH}:/data
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
     networks:
-      - clawmanager-net
+      - ${NETWORK_NAME:-clawmanager-net}
 
   skill-scanner:
     image: ghcr.io/yuan-lab-llm/skill-scanner:latest
@@ -51,9 +51,9 @@ services:
     restart: unless-stopped
     command: ["/opt/skill-scanner-venv/bin/skill-scanner-api", "--host", "0.0.0.0", "--port", "8000"]
     ports:
-      - "8000:8000"
+      - "${SKILL_SCANNER_PORT:-8000}:8000"
     networks:
-      - clawmanager-net
+      - ${NETWORK_NAME:-clawmanager-net}
 
   clawmanager:
     image: ghcr.io/yuan-lab-llm/clawmanager:latest
@@ -66,15 +66,15 @@ services:
         condition: service_started
     environment:
       DB_HOST: mysql
-      DB_PORT: "3306"
-      DB_USER: clawreef
-      DB_PASSWORD: clawreef123
-      DB_NAME: clawmanager
-      DB_ROOT_PASSWORD: root123
+      DB_PORT: "${DB_PORT:-3306}"
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_NAME: ${MYSQL_DATABASE}
+      DB_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       OBJECT_STORAGE_ENDPOINT: minio:9000
-      OBJECT_STORAGE_ACCESS_KEY: minioadmin
-      OBJECT_STORAGE_SECRET_KEY: minioadmin
-      OBJECT_STORAGE_BUCKET: clawmanager
+      OBJECT_STORAGE_ACCESS_KEY: ${MINIO_ROOT_USER}
+      OBJECT_STORAGE_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      OBJECT_STORAGE_BUCKET: ${MINIO_BUCKET:-clawmanager}
       OBJECT_STORAGE_USE_SSL: "false"
       OBJECT_STORAGE_FORCE_PATH_STYLE: "true"
       SKILL_SCANNER_ENABLED: "true"
@@ -83,9 +83,9 @@ services:
       SERVER_ADDRESS: ":9001"
       GIN_MODE: release
     ports:
-      - "30443:9001"
+      - "${APP_PORT:-30443}:9001"
     networks:
-      - clawmanager-net
+      - ${NETWORK_NAME:-clawmanager-net}
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O- http://localhost:9001/ || exit 1"]
       interval: 30s
@@ -94,5 +94,5 @@ services:
       start_period: 30s
 
 networks:
-  clawmanager-net:
+  ${NETWORK_NAME:-clawmanager-net}:
     driver: bridge
