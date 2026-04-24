@@ -18,11 +18,11 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
-      - ${MYSQL_DATA_PATH}:/var/lib/mysql
+      - ${MYSQL_DATA_PATH:-/mnt/Storage1/clawmanager/mysql}:/var/lib/mysql
     ports:
       - "${MYSQL_PORT:-3306}:3306"
     networks:
-      - ${NETWORK_NAME:-clawmanager-net}
+      - clawmanager-net
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -38,12 +38,12 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     volumes:
-      - ${MINIO_DATA_PATH}:/data
+      - ${MINIO_DATA_PATH:-/mnt/Storage1/clawmanager/minio}:/data
     ports:
       - "${MINIO_API_PORT:-9000}:9000"
       - "${MINIO_CONSOLE_PORT:-9001}:9001"
     networks:
-      - ${NETWORK_NAME:-clawmanager-net}
+      - clawmanager-net
 
   skill-scanner:
     image: ghcr.io/yuan-lab-llm/skill-scanner:latest
@@ -53,7 +53,7 @@ services:
     ports:
       - "${SKILL_SCANNER_PORT:-8000}:8000"
     networks:
-      - ${NETWORK_NAME:-clawmanager-net}
+      - clawmanager-net
 
   clawmanager:
     image: ghcr.io/yuan-lab-llm/clawmanager:latest
@@ -85,7 +85,7 @@ services:
     ports:
       - "${APP_PORT:-30443}:9001"
     networks:
-      - ${NETWORK_NAME:-clawmanager-net}
+      - clawmanager-net
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O- http://localhost:9001/ || exit 1"]
       interval: 30s
@@ -94,5 +94,5 @@ services:
       start_period: 30s
 
 networks:
-  ${NETWORK_NAME:-clawmanager-net}:
+  clawmanager-net:
     driver: bridge
