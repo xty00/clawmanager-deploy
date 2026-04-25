@@ -83,7 +83,7 @@ services:
       SERVER_ADDRESS: ":9001"
       GIN_MODE: release
     ports:
-      - "${APP_PORT:-30443}:9001"
+      - "${APP_PORT:-30443}:8443"
     networks:
       - clawmanager-net
     healthcheck:
